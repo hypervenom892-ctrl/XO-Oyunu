@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>HyperVenom Games - 2 Kişilik XOX Oyunu</title>
+  <style>
+    :root {
+      --bg-color: #06040a;
+      --card-bg: #120b1f;
+      --neon-x: #ef4444;    /* Kırmızı / Pembe X */
+      --neon-o: #06b6d4;    /* Mavi / Siyan O */
+      --neon-purple: #a855f7;
+      --text-color: #f3e8ff;
+      --gold: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg-color);
+      background-image: 
+        radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .brand-title {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--neon-x), var(--neon-o));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+      margin-bottom: 10px;
+    }
+
+    /* Skor Paneli */
+    .scoreboard {
+      display: flex;
+      gap: 15px;
+      background: rgba(18, 11, 31, 0.85);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 20px;
+      padding: 12px 25px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .player-score {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 16px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      min-width: 90px;
+    }
+
+    .player-score.active-x {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--neon-x);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .player-score.active-o {
+      background: rgba(6, 182, 212, 0.15);
+      border: 1px solid var(--neon-o);
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+    }
+
+    .score-label {
+      font-size: 13px;
+      font-weight: 700;
+      opacity: 0.8;
+    }
+
+    .score-val {
+      font-size: 24px;
+      font-weight: 900;
+    }
+
+    .score-x { color: var(--neon-x); }
+    .score-o { color: var(--neon-o); }
+
+    /* Oyun Tahtası */
+    .game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 1 / 1;
+      margin: 15px 0;
+    }
+
+    .cell {
+      background: rgba(18, 11, 31, 0.9);
+      border: 2px solid rgba(168, 85, 247, 0.25);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 54px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .cell:hover {
+      border-color: var(--neon-purple);
+      background: rgba(30, 18, 50, 0.9);
+    }
+
+    .cell.x-mark {
+      color: var(--neon-x);
+      text-shadow: 0 0 15px var(--neon-x), 0 0 30px var(--neon-x);
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .cell.o-mark {
+      color: var(--neon-o);
+      text-shadow: 0 0 15px var(--neon-o), 0 0 30px var(--neon-o);
+      animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .cell.winning-cell {
+      animation: winGlow 0.8s ease-in-out infinite alternate;
+      background: rgba(168, 85, 247, 0.3);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.3); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes winGlow {
+      0% { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); }
+      100% { border-color: var(--neon-purple); box-shadow: 0 0 30px var(--neon-purple); }
+    }
+
+    /* Durum ve Butonlar */
+    .status-msg {
+      font-size: 16px;
+      font-weight: 700;
+      min-height: 24px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-o));
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+      transition: all 0.25s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+    }
+
+    .btn-reset {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    /* Zafer Modalı */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 4, 10, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: var(--card-bg);
+      border: 2px solid var(--neon-purple);
+      border-radius: 24px;
+      padding: 30px;
+      text-align: center;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
+    }
+
+    .modal-title {
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gold);
+      margin-bottom: 10px;
+      text-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-title">X O X OYUNU</div>
+    
+    <div class="scoreboard">
+      <div id="card-x" class="player-score active-x">
+        <span class="score-label score-x">Oyuncu X</span>
+        <span id="score-x" class="score-val score-x">0</span>
+      </div>
+      
+      <div id="card-o" class="player-score">
+        <span class="score-label score-o">Oyuncu O (Anne)</span>
+        <span id="score-o" class="score-val score-o">0</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="status" class="status-msg">Sıra: <span class="score-x">Oyuncu X</span></div>
+
+  <main class="game-board" id="board">
+    <div class="cell" data-idx="0"></div>
+    <div class="cell" data-idx="1"></div>
+    <div class="cell" data-idx="2"></div>
+    <div class="cell" data-idx="3"></div>
+    <div class="cell" data-idx="4"></div>
+    <div class="cell" data-idx="5"></div>
+    <div class="cell" data-idx="6"></div>
+    <div class="cell" data-idx="7"></div>
+    <div class="cell" data-idx="8"></div>
+  </main>
+
+  <div class="btn-group">
+    <button class="btn" id="btn-next">Yeni Tur 🔄</button>
+    <button class="btn btn-reset" id="btn-reset">Skoru Sıfırla 🧹</button>
+  </div>
+
+  <!-- Sonuç Ekranı -->
+  <div class="modal" id="modal">
+    <div class="modal-card">
+      <div class="modal-title" id="modal-title">TEBRİKLER! 🎉</div>
+      <p id="modal-msg" style="font-size: 18px; margin-bottom: 20px; color: #e2e8f0;"></p>
+      <button class="btn" id="modal-btn">Devam Et 🚀</button>
+    </div>
+  </div>
+
+  <script>
+    // Audio Context (Ses Efektleri)
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playSound(type) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'x') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(600, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'o') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'win') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523, now);
+        osc.frequency.setValueAtTime(659, now + 0.12);
+        osc.frequency.setValueAtTime(783, now + 0.24);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } else if (type === 'draw') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(180, now + 0.15);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    // Oyun Durumu
+    let boardState = Array(9).fill('');
+    let currentPlayer = 'X';
+    let isGameActive = true;
+    let scoreX = 0;
+    let scoreO = 0;
+
+    const winPatterns = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Yataylar
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Dikey
+      [0, 4, 8], [2, 4, 6]             // Çaprazlar
+    ];
+
+    // DOM Elemanları
+    const cells = document.querySelectorAll('.cell');
+    const statusEl = document.getElementById('status');
+    const scoreXEl = document.getElementById('score-x');
+    const scoreOEl = document.getElementById('score-o');
+    const cardX = document.getElementById('card-x');
+    const cardO = document.getElementById('card-o');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalMsg = document.getElementById('modal-msg');
+
+    // Hücreye Tıklama
+    function handleCellClick(e) {
+      initAudio();
+      const cell = e.target;
+      const idx = parseInt(cell.dataset.idx);
+
+      if (boardState[idx] !== '' || !isGameActive) return;
+
+      boardState[idx] = currentPlayer;
+      cell.innerText = currentPlayer;
+      cell.classList.add(currentPlayer === 'X' ? 'x-mark' : 'o-mark');
+      playSound(currentPlayer.toLowerCase());
+
+      checkResult();
+    }
+
+    // Kazanan Kontrolü
+    function checkResult() {
+      let roundWon = false;
+      let winningCombo = [];
+
+      for (let i = 0; i < winPatterns.length; i++) {
+        const [a, b, c] = winPatterns[i];
+        if (boardState[a] && boardState[a] === boardState[b] && boardState[a] === boardState[c]) {
+          roundWon = true;
+          winningCombo = [a, b, c];
+          break;
+        }
+      }
+
+      if (roundWon) {
+        playSound('win');
+        isGameActive = false;
+        winningCombo.forEach(idx => cells[idx].classList.add('winning-cell'));
+
+        if (currentPlayer === 'X') {
+          scoreX++;
+          scoreXEl.innerText = scoreX;
+          showModal('KAZANAN X! 🎉', 'Oyuncu X turu kazandı!');
+        } else {
+          scoreO++;
+          scoreOEl.innerText = scoreO;
+          showModal('KAZANAN O! 🎉', 'Oyuncu O (Anne) turu kazandı!');
+        }
+        return;
+      }
+
+      // Beraberlik Kontrolü
+      if (!boardState.includes('')) {
+        playSound('draw');
+        isGameActive = false;
+        showModal('BERABERE! 🤝', 'Harika bir mücadele oldu!');
+        return;
+      }
+
+      // Sıra Değişimi
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      updateUI();
+    }
+
+    // Arayüz Tarafını Güncelleme
+    function updateUI() {
+      cardX.classList.toggle('active-x', currentPlayer === 'X');
+      cardO.classList.toggle('active-o', currentPlayer === 'O');
+
+      if (currentPlayer === 'X') {
+        statusEl.innerHTML = 'Sıra: <span class="score-x">Oyuncu X</span>';
+      } else {
+        statusEl.innerHTML = 'Sıra: <span class="score-o">Oyuncu O (Anne)</span>';
+      }
+    }
+
+    // Modal Gösterme
+    function showModal(title, msg) {
+      setTimeout(() => {
+        modalTitle.innerText = title;
+        modalMsg.innerText = msg;
+        modal.classList.add('active');
+      }, 400);
+    }
+
+    // Yeni Tur Başlatma
+    function nextRound() {
+      boardState = Array(9).fill('');
+      isGameActive = true;
+      currentPlayer = 'X';
+      modal.classList.remove('active');
+
+      cells.forEach(cell => {
+        cell.innerText = '';
+        cell.className = 'cell';
+      });
+
+      updateUI();
+    }
+
+    // Tüm Skoru Sıfırlama
+    function resetAll() {
+      scoreX = 0;
+      scoreO = 0;
+      scoreXEl.innerText = '0';
+      scoreOEl.innerText = '0';
+      nextRound();
+    }
+
+    // Event Listener'lar
+    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    document.getElementById('btn-next').addEventListener('click', nextRound);
+    document.getElementById('btn-reset').addEventListener('click', resetAll);
+    document.getElementById('modal-btn').addEventListener('click', nextRound);
+  </script>
+</body>
+</html>
